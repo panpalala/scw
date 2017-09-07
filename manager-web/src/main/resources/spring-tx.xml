@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd">
+
+	<!-- 引入外部属性文件，用于配置数据源 -->
+	<context:property-placeholder location="classpath:jdbc.properties"/>
+	
+	<!-- 配置数据源druid -->
+	<bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+		<property name="username" value="${jdbc.user}"></property>
+		<property name="password" value="${jdbc.password}"></property>
+		<property name="driverClassName" value="${jdbc.driverClass}"></property>
+		<property name="url" value="${jdbc.jdbcUrl}"></property>
+	</bean>
+	
+	<!-- 配置事务管理器，装配数据源 -->
+	<bean id="dataSourceTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	
+	<!-- 配置事务切面 -->
+	<aop:config>
+		<aop:pointcut expression="execution(* com.atguigu.scw.service..*.*(..))" id="txPointcut"/>
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="txPointcut"/>
+	</aop:config>
+	
+	<!-- 配置事务建议 -->
+	<tx:advice id="txAdvice" transaction-manager="dataSourceTransactionManager">
+		<tx:attributes>
+			<!-- 指定所有方法都被切面事务控制 -->
+			<tx:method name="*"/>
+			<tx:method name="get*" propagation="REQUIRES_NEW" isolation="READ_COMMITTED" read-only="true"/>
+			<tx:method name="list*" propagation="REQUIRES_NEW" isolation="READ_COMMITTED" read-only="true"/>
+			<tx:method name="count*" propagation="REQUIRES_NEW" isolation="READ_COMMITTED" read-only="true"/>
+			<!--声明式事务默认只会对runtimeException和error回滚，为了对编译时异常也回滚，需要设置rollback-for=java.lang.Exception  -->
+			<tx:method name="save*" rollback-for="java.lang.Exception" propagation="REQUIRES_NEW"/>
+			<tx:method name="insert*" rollback-for="java.lang.Exception" propagation="REQUIRES_NEW"/>
+			<tx:method name="delete*" rollback-for="java.lang.Exception" propagation="REQUIRES_NEW"/>
+			<tx:method name="remove*" rollback-for="java.lang.Exception" propagation="REQUIRES_NEW"/>
+			<tx:method name="update*" rollback-for="java.lang.Exception" propagation="REQUIRES_NEW"/>
+		</tx:attributes>
+	</tx:advice>
+</beans>
